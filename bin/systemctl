@@ -1,0 +1,97 @@
+#!/bin/sh
+
+SD="/var/service"
+SV="/etc/sv"
+
+if test "$#" -eq 0; then
+  echo "systemd fuck yeah!!"
+  echo "available commands are: start, stop, restart, reload, status, enable, disable, is-enabled, is-active, list-units"
+  exit 0
+fi
+
+S="$1"
+shift
+
+case "$S" in
+  'start' | 'stop' | 'restart' | 'reload')
+   for SVC; do
+     sv "$S" "$SVC" || exit 1
+   done
+   ;;
+  'status')
+    for SVC; do
+      sv status "$SVC"
+    done
+    ;;
+  'enable')
+    for SVC; do
+      if test -e "$SD/$SVC"; then
+        echo "$SVC is already enabled"
+        continue
+      fi
+      ln -s "$SV/$SVC" "$SD/$SVC" && echo "enabled $SVC"
+    done
+    ;;
+  'disable')
+    for SVC; do
+      if ! test -L "$SD/$SVC" -o -d "$SD/$SVC"; then
+        echo "$SVC is not enabled"
+        continue
+      fi
+      unlink "$SD/$SVC"
+    done
+    ;;
+  'is-enabled')
+    R=0
+    for SVC; do
+      if test -L "$SD/$SVC" -o -d "$SD/$SVC"; then
+        echo "is enabled"
+      else
+        echo "disabled"
+        R=1
+      fi
+    done
+    exit $R
+    ;;
+  'is-active')
+    R=0
+    for SVC; do
+      O="$(sv status "$SVC" 2>/dev/null)"
+      if echo "$O" | grep -q "^run:"; then
+        echo "active"
+      elif echo "$O" | grep -q "warning:"; then
+        echo "$O" >&2
+        R=3
+      else
+        echo "inactive"
+        R=3
+      fi
+    done
+    exit $R
+    ;;
+  'list-units' | 'list-unit-files')
+    for SVC in "$SD"/*; do
+      test -e "$SVC" || continue
+      N="${SVC##*/}"
+      O="$(sv status "$N" 2>/dev/null)"
+      if echo "$O" | grep -q "^run:"; then
+          state="running"
+      elif echo "$O" | grep -q "warning:"; then
+          state="unknown"
+      else
+          state="stopped"
+      fi
+      printf "%-40s %-10s\n" "$N.service" "$state"
+    done
+    ;;
+  'daemon-reload')
+     echo "no-op!"
+     ;;
+  '--version' | '-v' | '--help' | '-h')
+     echo "fuck you"
+     ;;
+  *)
+     echo "error: $S is not supported!" >&2
+     exit 1
+     ;;
+esac

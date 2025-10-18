@@ -1,0 +1,15 @@
+#!/bin/sh
+
+S="$1"
+if test -z "$S"; then
+  echo "hiiiii from xbps!!!!"
+  exit 0
+fi
+
+if ! which xbps-"$S" > /dev/null 2>&1; then
+  echo "error: there is no xbps-$S :(" >&2
+  exit 1
+fi
+
+shift
+xbps-"$S" "$@"

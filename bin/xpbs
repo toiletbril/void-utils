@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "oops! you misspelled xbps, but I've got you :3"
+
+F="$HOME/how-many-times-i-misspelled-xbps"
+test -f "$F" || echo 0 > "$F"
+NT=$(cat "$F")
+N="$((NT + 1))"
+echo "$N" > "$F"
+
+exec xbps "$@"
