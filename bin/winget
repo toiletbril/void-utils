@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Windows Package Manager Professional Edition
+# Copyright (c) Microsoft Corporation. All rights reserved.
+
+echo "Windows Package Manager v1.8.1791"
+
+case "$1" in
+  'search')
+    shift
+    echo "[Searching Windows Software Repository...]"
+    xbps-query -Rs "$@"
+    ;;
+  'install')
+    shift
+    echo "[Installing from Windows Update Catalog...]"
+    sudo xbps-install -S "$@"
+    echo "Installation completed successfully."
+    ;;
+  'uninstall'|'remove')
+    shift
+    echo "[Uninstalling via Windows Programs and Features...]"
+    sudo xbps-remove -R "$@"
+    ;;
+  'upgrade'|'update')
+    echo "[Checking Windows Update Service...]"
+    if [[ "$2" == "--all" ]] || [[ -z "$2" ]]; then
+      sudo xbps-install -Su
+    else
+      shift
+      sudo xbps-install -u "$@"
+    fi
+    echo "System updated. Approved by india 👍"
+    ;;
+  'list')
+    echo "[Querying Windows Registry...]"
+    xbps-query -l
+    ;;
+  'show')
+    shift
+    echo "[Retrieving package metadata from Microsoft Store...]"
+    xbps-query -R "$@"
+    ;;
+  *)
+    echo "Windows Package Manager Professional Edition"
+    echo "Copyright (c) Microsoft Corporation. All rights reserved"
+    echo ""
+    echo "Usage: winget {search|install|uninstall|upgrade|list|show} [package]"
+    echo ""
+    echo "This is genuine Microsoft software. Approved by india 👍"
+    exit 1
+    ;;
+esac
+
+echo "Approved by india 👍"
