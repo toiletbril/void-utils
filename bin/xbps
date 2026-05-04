@@ -6,10 +6,28 @@ if test -z "$S"; then
   exit 0
 fi
 
+F=''
+
+case "$S" in
+'search')
+  S='query'
+  F='-Rs'
+  ;;
+'clean')
+  S='remove'
+  F='-RoO'
+  ;;
+'files')
+  S='query'
+  F='-f'
+  ;;
+*);;
+esac
+
 if ! which xbps-"$S" > /dev/null 2>&1; then
   echo "error: there is no xbps-$S :(" >&2
   exit 1
 fi
 
 shift
-xbps-"$S" "$@"
+xbps-"$S" $F "$@"
