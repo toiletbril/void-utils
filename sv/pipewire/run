@@ -1,0 +1,30 @@
+#!/bin/bash
+exec 2>&1
+
+# Target user is written to ./conf by install.sh.
+SV_USER=root
+test -r ./conf && . ./conf
+
+SV_UID="$(id -u "$SV_USER")"
+SV_HOME="$(getent passwd "$SV_USER" | cut -d: -f6)"
+
+export XDG_RUNTIME_DIR="/run/user/$SV_UID"
+export HOME="$SV_HOME"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+
+# elogind creates XDG_RUNTIME_DIR at login; back off and let runit retry until then.
+test -d "$XDG_RUNTIME_DIR" || { sleep 10; exit 1; }
+
+p1='' p2='' p3=''
+stop() { kill "$p1" "$p2" "$p3" 2>/dev/null; exit 1; }
+trap stop INT TERM
+
+chpst -u "$SV_USER" pipewire &       p1=$!
+sleep 2
+chpst -u "$SV_USER" pipewire-pulse & p2=$!
+sleep 2
+chpst -u "$SV_USER" wireplumber &    p3=$!
+
+# Block until ANY of the three children exits, then tear the rest down.
+wait -n
+stop
